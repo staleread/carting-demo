@@ -4,7 +4,7 @@ import { Cookie } from 'undici';
 
 export type PrimaryType = 'syos' | 'syos2';
 
-export type AddSeatsToCartDto = {
+export type SeatsInfo = {
   performanceId: number;
   seatIds: number[];
   priceType: string;
@@ -15,11 +15,14 @@ export type SessionInfo = {
   cookies: Cookie[];
 };
 
-export interface PrimaryApiClientService {
-  addSeatsToCart(dto: AddSeatsToCartDto): ResultAsync<null, HttpException>;
-}
-
 export type ReserveSeatsDto = {
   sessionInfo: SessionInfo;
-  seatsInfo: AddSeatsToCartDto;
+  seatsInfo: SeatsInfo;
 };
+
+export interface PrimaryApiClientService {
+  reserveSeats(
+    sessionInfo: SessionInfo,
+    seatsInfo: SeatsInfo,
+  ): ResultAsync<null, HttpException>;
+}

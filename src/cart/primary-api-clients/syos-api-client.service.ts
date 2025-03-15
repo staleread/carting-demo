@@ -1,35 +1,35 @@
 import { fetch, Headers } from 'undici';
-import { HttpException } from '@nestjs/common';
-import {
-  AddSeatsToCartDto,
-  PrimaryApiClientService,
-  SessionInfo,
-} from '../cart.types';
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { SeatsInfo as ReservationInfo, PrimaryApiClientService, SessionInfo } from '../cart.types';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { CookieFormatter } from 'src/common/cookie-formatter';
+import { formatCookies } from '../utils';
 
 export class SyosApiClientService implements PrimaryApiClientService {
-  constructor(private readonly sessionInfo: SessionInfo) {}
-
-  public addSeatsToCart(
-    dto: AddSeatsToCartDto,
+  public reserveSeats(
+    sessionInfo: SessionInfo,
+    reservationInfo: ReservationInfo,
   ): ResultAsync<null, HttpException> {
     const url = 'https://my.ensembleartsphilly.org/proxy';
 
     const headers = new Headers({
       'Content-Type': 'application/json',
-      Cookie: CookieFormatter.formatCookies(this.sessionInfo.cookies),
+      Cookie: formatCookies(sessionInfo.cookies),
     });
+
+    const formattedPriceType = reservationInfo.seatIds
+      .map(() => reservationInfo.priceType)
+      .join(',');
+    const formattedSeatIds = reservationInfo.seatIds.join(',');
 
     const body = JSON.stringify({
       method: 'ReserveTicketsSpecifiedSeats',
       params: {
-        sWebSessionID: this.sessionInfo.sessionId,
-        sPriceType: dto.seatIds.map(() => dto.priceType).join(','),
-        iPerformanceNumber: dto.performanceId,
-        iNumberOfSeats: dto.seatIds.length,
+        sWebSessionID: sessionInfo.sessionId,
+        sPriceType: formattedPriceType,
+        iPerformanceNumber: reservationInfo.performanceId,
+        iNumberOfSeats: reservationInfo.seatIds.length,
+        RequestedSeats: formattedSeatIds,
         sSpecialRequests: 'LeaveSingleSeats=Y',
-        RequestedSeats: dto.seatIds.join(','),
         iZone: 0,
         swapLineItemId: null,
         swapOrderId: null,
@@ -48,12 +48,14 @@ export class SyosApiClientService implements PrimaryApiClientService {
         return ok(null);
       }
       if (res.status === 202) {
-        return err(new HttpException('Invalid session info', 502));
+        return err(
+          new HttpException('Invalid session info', HttpStatus.BAD_GATEWAY),
+        );
       }
       return err(
         new HttpException(
-          'The request was refused due to temporary block',
-          502,
+          `${res.status} - the request was rejected due to a temporary block`,
+          HttpStatus.BAD_GATEWAY,
         ),
       );
     });

@@ -6,9 +6,12 @@ import { ReserveSeatsDto } from './cart.types';
 export class CartController {
   @Post()
   public async addSeatsToCart(@Body() dto: ReserveSeatsDto): Promise<string> {
-    const primaryApiClient = new SyosApiClientService(dto.sessionInfo);
+    const primaryApiClient = new SyosApiClientService();
 
-    const result = await primaryApiClient.addSeatsToCart(dto.seatsInfo);
+    const result = await primaryApiClient.reserveSeats(
+      dto.sessionInfo,
+      dto.seatsInfo,
+    );
 
     if (result.isOk()) {
       return 'https://my.ensembleartsphilly.org/booking/basket';
