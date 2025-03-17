@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { SyosApiClientService } from './primary-api-clients/syos-api-client.service';
 import { CartController } from './cart.controller';
+import { CartService } from './cart.service';
 
 @Module({
   controllers: [CartController],
-  providers: [SyosApiClientService],
+  providers: [CartService],
 })
 export class CartModule {}
