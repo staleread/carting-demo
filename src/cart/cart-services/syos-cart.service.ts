@@ -2,17 +2,18 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Dispatcher, fetch, Request, Response } from 'undici';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { z, ZodSchema } from 'zod';
-import { ConfigService } from '@nestjs/config';
 import { ReserveSeatsForSessionDto } from '../dto/reserve-seats-for-session.dto';
 import { CartService } from '../interfaces/cart-service.interface';
 import { ReserveSeatsForSessionResponse } from '../responses/reserve-seats-for-session.response';
+import { SyosGeneralResponseSchema } from '../schemas/syos-general-response.schema';
+import { HttpConfigService } from 'src/config/http-config.service';
 
 @Injectable()
 export class SyosCartService implements CartService {
   private readonly requestDispatcher: Dispatcher | undefined;
 
-  constructor(configService: ConfigService) {
-    this.requestDispatcher = configService.get<Dispatcher>('dispatcher');
+  constructor(httpConfigService: HttpConfigService) {
+    this.requestDispatcher = httpConfigService.getDispatcher();
   }
 
   public reserveSeatsForSession(

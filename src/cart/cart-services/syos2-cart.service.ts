@@ -5,14 +5,14 @@ import { z, ZodSchema } from 'zod';
 import { CartService } from '../interfaces/cart-service.interface';
 import { ReserveSeatsForSessionDto } from '../dto/reserve-seats-for-session.dto';
 import { ReserveSeatsForSessionResponse } from '../responses/reserve-seats-for-session.response';
-import { ConfigService } from '@nestjs/config';
+import { HttpConfigService } from 'src/config/http-config.service';
 
 @Injectable()
 export class Syos2CartService implements CartService {
   private readonly requestDispatcher: Dispatcher | undefined;
 
-  constructor(configService: ConfigService) {
-    this.requestDispatcher = configService.get<Dispatcher>('dispatcher');
+  constructor(httpConfigService: HttpConfigService) {
+    this.requestDispatcher = httpConfigService.getDispatcher();
   }
 
   public reserveSeatsForSession(
