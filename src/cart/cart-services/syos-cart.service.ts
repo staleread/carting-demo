@@ -9,19 +9,6 @@ import { ReserveSeatsForSessionResponse } from '../responses/reserve-seats-for-s
 
 @Injectable()
 export class SyosCartService implements CartService {
-  private static readonly tessituraGeneralResponseSchema = z.union([
-    z.object({
-      id: z.string(),
-      result: z.unknown(),
-      error: z.null(),
-    }),
-    z.object({
-      id: z.string(),
-      result: z.null(),
-      error: z.string(),
-    }),
-  ]);
-
   private readonly requestDispatcher: Dispatcher | undefined;
 
   constructor(configService: ConfigService) {
@@ -112,8 +99,7 @@ export class SyosCartService implements CartService {
           HttpStatus.BAD_GATEWAY,
         ),
     ).andThen((json: unknown) => {
-      const parseResult =
-        SyosCartService.tessituraGeneralResponseSchema.safeParse(json);
+      const parseResult = SyosGeneralResponseSchema.safeParse(json);
 
       if (!parseResult.success) {
         return err(
