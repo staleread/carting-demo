@@ -1,24 +1,20 @@
-import { PrimaryMarketName } from './unions/primary-market-name.union';
+import { ModuleRef } from '@nestjs/core';
+import { PrimaryMarketPlatform } from './unions/primary-market-platform.union';
 import { CartService } from './interfaces/cart-service.interface';
+import { Syos2CartService } from './cart-services/syos2-cart.service';
+import { SyosCartService } from './cart-services/syos-cart.service';
 import { Injectable } from '@nestjs/common';
-import { PhillyorchCartService } from './services/phillyorch-cart-service';
 
 @Injectable()
 export class CartServiceFactory {
-  public getCartService(primaryMarketName: PrimaryMarketName): CartService {
-    switch (primaryMarketName) {
-      case 'phillyorch':
-        return new PhillyorchCartService();
-      case 'nyballet':
-      case 'phillipscenter':
-      case 'desymphony':
-      case 'bosymphony':
-      case 'rtc':
-      case 'nyphil':
-      case 'ford':
-      case 'laphil':
-      case 'hollywoodbowl':
-        throw new Error('Not implemented cart service');
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  public getCartService(primaryPlatform: PrimaryMarketPlatform): CartService {
+    switch (primaryPlatform) {
+      case 'syos':
+        return this.moduleRef.get(SyosCartService);
+      case 'syos2':
+        return this.moduleRef.get(Syos2CartService);
     }
   }
 }

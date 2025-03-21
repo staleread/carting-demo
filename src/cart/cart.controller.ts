@@ -1,39 +1,16 @@
-import {
-  Body,
-  Controller,
-  HttpException,
-  HttpStatus,
-  Post,
-} from '@nestjs/common';
-import { ReserveSeatsDto, ReserveSeatsDtoSchema } from './dto/reserve-seat.dto';
-import { ReserveSeatsResponse } from './responses/reserve-seats.response';
-import { CartServiceFactory } from './cart-service.factory';
+import { Body, Controller, Post } from '@nestjs/common';
+import { CartGatewayService } from './cart-gateway.service';
+import { ReserveSeatsForSessionResponse } from './responses/reserve-seats-for-session.response';
+import { ReserveSeatsForSessionPartialDto } from './dto/reserve-seats-for-session-partial.dto';
 
 @Controller()
 export class CartController {
-  constructor(private readonly cartServiceFactory: CartServiceFactory) {}
+  constructor(private readonly cartGatewayService: CartGatewayService) {}
 
   @Post()
-  public async addSeatsToCart(
-    @Body() dto: ReserveSeatsDto,
-  ): Promise<ReserveSeatsResponse> {
-    const isValidDto = ReserveSeatsDtoSchema.safeParse(dto).success;
-
-    if (!isValidDto) {
-      throw new HttpException(
-        "Reservation DTO doesn't follow the schema",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const cartService = this.cartServiceFactory.getCartService(
-      dto.primaryMarketName,
-    );
-    const result = await cartService.reserveSeats(dto);
-
-    if (result.isOk()) {
-      return result.value;
-    }
-    throw result.error;
+  public async reserveSeatsForSesssion(
+    @Body() dto: ReserveSeatsForSessionPartialDto,
+  ): Promise<ReserveSeatsForSessionResponse> {
+    return await this.cartGatewayService.reserveSeatsForSession(dto);
   }
 }
