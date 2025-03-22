@@ -30,6 +30,7 @@ export class Syos2CartService implements CartService {
     const request = this.createReserveSeatsForSessionRequest(dto);
 
     const expectedResultSchema = z.object({
+      LineItemId: z.number(),
       SeatsReserved: z.number(),
     });
 
