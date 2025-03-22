@@ -25,31 +25,31 @@ export const primaryMarkets: Record<PrimaryMarketName, PrimaryMarketInfo> = {
   bosymphony: {
     platform: 'syos',
     ticketingEndpoint: 'https://secure.bso.org/proxy',
-    cartUrl: '',
+    cartUrl: 'https://secure.bso.org/booking/basket',
   },
   rtc: {
     platform: 'syos',
     ticketingEndpoint: 'https://tickets.roundabouttheatre.org/proxy',
-    cartUrl: '',
+    cartUrl: 'https://tickets.roundabouttheatre.org/booking/cart',
   },
   nyphil: {
     platform: 'syos',
     ticketingEndpoint: 'https://my.nyphil.org/en/proxy',
-    cartUrl: '',
+    cartUrl: 'https://my.nyphil.org/en/booking/basket',
   },
   ford: {
     platform: 'syos2',
     ticketingEndpoint: 'https://my.theford.com/en/rest-proxy',
-    cartUrl: '',
+    cartUrl: 'https://my.theford.com/en/booking/basket',
   },
   laphil: {
     platform: 'syos2',
     ticketingEndpoint: 'https://my.laphil.com/en/rest-proxy',
-    cartUrl: '',
+    cartUrl: 'https://my.laphil.com/en/booking/basket',
   },
   hollywoodbowl: {
     platform: 'syos2',
     ticketingEndpoint: 'https://my.hollywoodbowl.com/en/rest-proxy',
-    cartUrl: '',
+    cartUrl: 'https://my.hollywoodbowl.com/en/booking/basket',
   },
 };
