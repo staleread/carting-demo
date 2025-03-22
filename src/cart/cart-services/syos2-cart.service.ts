@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { Dispatcher, fetch, Request, Response } from 'undici';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { z, ZodSchema } from 'zod';
@@ -6,6 +11,10 @@ import { CartService } from '../interfaces/cart-service.interface';
 import { ReserveSeatsForSessionDto } from '../dto/reserve-seats-for-session.dto';
 import { ReserveSeatsForSessionResponse } from '../responses/reserve-seats-for-session.response';
 import { HttpConfigService } from 'src/config/http-config.service';
+import { WafChallengeRequiredException } from '../exceptions/waf-challenge-required.exception';
+import { CdnCannotProcessRequestException } from '../exceptions/cdn-cannot-process-request.exception';
+import { PrimaryInternalErrorException } from '../exceptions/primary-internal-error.exception';
+import { ApiBreakingChangeException } from '../exceptions/api-breaking-change.exception';
 
 @Injectable()
 export class Syos2CartService implements CartService {
@@ -64,31 +73,22 @@ export class Syos2CartService implements CartService {
   }
 
   private checkResponseStatus(res: Response): Result<void, HttpException> {
-    if (res.status == 200) {
-      return ok();
+    switch (res.status) {
+      case 200:
+        return ok();
+      case 202:
+        return err(new WafChallengeRequiredException());
+      case 400:
+        return err(new CdnCannotProcessRequestException('CloudFront'));
+      case 503:
+        return err(new PrimaryInternalErrorException('syos2'));
+      default:
+        return err(
+          new BadGatewayException(
+            `Unexpected response with ${res.status} status received`,
+          ),
+        );
     }
-    if (res.status == 202) {
-      return err(
-        new HttpException(
-          'Server requests challenge completion',
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    }
-    if (res.status == 400) {
-      return err(
-        new HttpException(
-          'The request was rejected by the CloudFront',
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    }
-    return err(
-      new HttpException(
-        `${res.status}: Unexpected error happened`,
-        HttpStatus.BAD_GATEWAY,
-      ),
-    );
   }
 
   private unwrapResponseData(
@@ -96,11 +96,7 @@ export class Syos2CartService implements CartService {
   ): ResultAsync<unknown, HttpException> {
     return ResultAsync.fromPromise(
       res.json(),
-      () =>
-        new HttpException(
-          'Failed to parse JSON response',
-          HttpStatus.BAD_GATEWAY,
-        ),
+      () => new BadGatewayException('Failed to parse API response body'),
     );
   }
 
@@ -113,11 +109,6 @@ export class Syos2CartService implements CartService {
     if (parseResult.success) {
       return ok(parseResult.data);
     }
-    return err(
-      new HttpException(
-        'The response body does not follow the schema',
-        HttpStatus.BAD_GATEWAY,
-      ),
-    );
+    return err(new ApiBreakingChangeException());
   }
 }
