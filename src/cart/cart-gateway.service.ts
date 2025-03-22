@@ -32,8 +32,8 @@ export class CartGatewayService {
     const primaryMarketInfo = primaryMarkets[partialDto.primaryMarketName];
 
     const cookieHeaderValue = Object.entries(partialDto.sessionInfo.cookies)
-      .map(([key, value]) => `${key}=${value};`)
-      .join(' ');
+      .map(([key, value]) => `${key}=${value}`)
+      .join('; ');
 
     const lineItems: LineItemDto[] = partialDto.seatsInfo.seatNumbers.map(
       (seatNumber) => ({
