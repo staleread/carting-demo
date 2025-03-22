@@ -13,4 +13,4 @@ Primary market support:
 - [ ] hollywoodbowl !!
 
 > [!WARNING]
-> In some cases desymphony's JSON responses (`200` status) cannot be parsed. Those cases are to be discovered
+> In some cases desymphony's `200`-status responses cannot be parsed. Those cases are to be discovered
