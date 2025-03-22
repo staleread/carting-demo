@@ -8,6 +8,7 @@ export const ReserveSeatsForSessionPartialDtoSchema = z.object({
       'aws-waf-token': z.string(),
       crowdhandler: z.string(),
       crowdhandler_integration: z.string(),
+      BOSESSID: z.string(),
     }),
   }),
   seatsInfo: z.object({
