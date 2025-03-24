@@ -30,7 +30,7 @@ export class SyosCartService implements CartService {
   ): ResultAsync<ReserveSeatsForSessionResponse, HttpException> {
     const request = this.createReserveSeatsForSessionRequest(dto);
 
-    const expectedResultSchema = z.number();
+    const responseSchema = z.number();
 
     return ResultAsync.fromPromise(
       fetch(request),
@@ -40,8 +40,8 @@ export class SyosCartService implements CartService {
       .andThrough((res: Response) => this.checkResponseStatus(res))
       .andThen((res: Response) => this.retrieveJsonResponseBody(res))
       .andThen((json: unknown) => this.unwrapSyosResult(json))
-      .andThen((data: unknown) =>
-        this.parseResponseData(data, expectedResultSchema),
+      .andThen((result: unknown) =>
+        this.parseResponseSchema(result, responseSchema),
       )
       .map(() => ({ url: dto.primaryMarketInfo.cartUrl }));
   }
@@ -135,7 +135,7 @@ export class SyosCartService implements CartService {
     return okAsync(data.result);
   }
 
-  private parseResponseData<T>(
+  private parseResponseSchema<T>(
     data: unknown,
     schema: ZodSchema<T>,
   ): Result<T, HttpException> {
