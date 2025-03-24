@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Dispatcher, fetch, Request, Response } from 'undici';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, errAsync, ok, Result, ResultAsync } from 'neverthrow';
 import { z, ZodSchema } from 'zod';
 import { CartService } from '../interfaces/cart-service.interface';
 import { ReserveSeatsForSessionDto } from '../dto/reserve-seats-for-session.dto';
@@ -40,7 +40,7 @@ export class Syos2CartService implements CartService {
         new HttpException('Failed to fetch', HttpStatus.INTERNAL_SERVER_ERROR),
     )
       .andThrough((res: Response) => this.checkResponseStatus(res))
-      .andThen((res: Response) => this.unwrapResponseData(res))
+      .andThen((res: Response) => this.retrieveJsonResponseBody(res))
       .andThen((data) => this.parseResponseData(data, expectedResultSchema))
       .map(() => ({ url: dto.primaryMarketInfo.cartUrl }));
   }
@@ -92,12 +92,29 @@ export class Syos2CartService implements CartService {
     }
   }
 
-  private unwrapResponseData(
+  private retrieveJsonResponseBody(
     res: Response,
   ): ResultAsync<unknown, HttpException> {
+    const expectedContentType = 'application/json';
+    const contentTypeHeader = res.headers.get('Content-Type')?.toLowerCase();
+
+    if (!contentTypeHeader) {
+      return errAsync(
+        new BadGatewayException('The API response has no Content-Type header'),
+      );
+    }
+
+    if (contentTypeHeader.indexOf(expectedContentType) < 0) {
+      return errAsync(
+        new BadGatewayException(
+          `Expected ${expectedContentType} response, but got ${contentTypeHeader}`,
+        ),
+      );
+    }
+
     return ResultAsync.fromPromise(
       res.json(),
-      () => new BadGatewayException('Failed to parse API response body'),
+      () => new BadGatewayException('Failed to parse JSON response'),
     );
   }
 

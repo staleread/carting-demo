@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Dispatcher, fetch, Request, Response } from 'undici';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from 'neverthrow';
 import { z, ZodSchema } from 'zod';
 import { ReserveSeatsForSessionDto } from '../dto/reserve-seats-for-session.dto';
 import { CartService } from '../interfaces/cart-service.interface';
@@ -38,8 +38,11 @@ export class SyosCartService implements CartService {
         new HttpException('Failed to fetch', HttpStatus.INTERNAL_SERVER_ERROR),
     )
       .andThrough((res: Response) => this.checkResponseStatus(res))
-      .andThen((res: Response) => this.unwrapResponseData(res))
-      .andThen((data) => this.parseResponseData(data, expectedResultSchema))
+      .andThen((res: Response) => this.retrieveJsonResponseBody(res))
+      .andThen((json: unknown) => this.unwrapSyosResult(json))
+      .andThen((data: unknown) =>
+        this.parseResponseData(data, expectedResultSchema),
+      )
       .map(() => ({ url: dto.primaryMarketInfo.cartUrl }));
   }
 
@@ -89,28 +92,47 @@ export class SyosCartService implements CartService {
     }
   }
 
-  private unwrapResponseData(
+  private retrieveJsonResponseBody(
     res: Response,
   ): ResultAsync<unknown, HttpException> {
+    const expectedContentType = 'application/json';
+    const contentTypeHeader = res.headers.get('Content-Type')?.toLowerCase();
+
+    if (!contentTypeHeader) {
+      return errAsync(
+        new BadGatewayException('The API response has no Content-Type header'),
+      );
+    }
+
+    if (contentTypeHeader.indexOf(expectedContentType) < 0) {
+      return errAsync(
+        new BadGatewayException(
+          `Expected ${expectedContentType} response, but got ${contentTypeHeader}`,
+        ),
+      );
+    }
+
     return ResultAsync.fromPromise(
       res.json(),
-      () => new BadGatewayException('Failed to parse API response body'),
-    ).andThen((json: unknown) => {
-      const parseResult = SyosGeneralResponseSchema.safeParse(json);
+      () => new BadGatewayException('Failed to parse JSON response'),
+    );
+  }
 
-      if (!parseResult.success) {
-        return err(new ApiBreakingChangeException());
-      }
+  private unwrapSyosResult(json: unknown): ResultAsync<unknown, HttpException> {
+    const parseResult = SyosGeneralResponseSchema.safeParse(json);
 
-      const data = parseResult.data;
+    if (!parseResult.success) {
+      return errAsync(new ApiBreakingChangeException());
+    }
 
-      if (data.error) {
-        return err(
-          new PrimaryInternalErrorException('syos', { cause: data.error }),
-        );
-      }
-      return ok(data.result);
-    });
+    const data = parseResult.data;
+
+    if (data.error) {
+      return errAsync(
+        new PrimaryInternalErrorException('syos', { cause: data.error }),
+      );
+    }
+    return okAsync(data.result);
   }
 
   private parseResponseData<T>(
